@@ -20,12 +20,18 @@ impl HttpInfoPacket {
 }
 
 pub struct ModListPacket {
+    pub confirm_id: u16,
     pub mods: Vec<String>,
 }
 
 impl ModListPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd_iter = packet_data.into_iter().map(|raw| raw as char);
+        let data_len = packet_data.len();
+        if data_len < 2 { return Err(PacketDecodeError::InvalidDataSize { expected: 2, actual: data_len }); }
+
+        let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
+
+        let mut pd_iter = packet_data[2..].iter().map(|raw| *raw as char);
         let mut mods = Vec::new();
         let mut mod_name = String::new();
         while let Some(c) = pd_iter.next() {
@@ -39,6 +45,7 @@ impl ModListPacket {
             mods.push(mod_name);
         }
         Ok(Self {
+            confirm_id,
             mods,
         })
     }
@@ -53,17 +60,24 @@ impl ModListPacket {
 }
 
 pub struct LoadMapPacket {
+    pub confirm_id: u16,
     pub map_name: String,
 }
 
 impl LoadMapPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
+        let data_len = packet_data.len();
+        if data_len < 2 { return Err(PacketDecodeError::InvalidDataSize { expected: 2, actual: data_len }); }
+
+        let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
+
         // TODO: String::with_capacity for 1 single big allocation for extra performance?
         let mut map_name = String::new();
-        for i in 0..packet_data.len() {
+        for i in 2..packet_data.len() {
             map_name.push(packet_data[i] as char);
         }
         Ok(Self {
+            confirm_id,
             map_name,
         })
     }
