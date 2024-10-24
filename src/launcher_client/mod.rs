@@ -2,9 +2,11 @@ use crate::*;
 
 pub mod generic;
 pub mod handshake;
+pub mod gameplay;
 
 use generic::*;
 use handshake::*;
+use gameplay::*;
 
 #[derive(Debug)]
 pub enum Packet {
@@ -17,6 +19,8 @@ pub enum Packet {
 
     JoinServer(JoinServerPacket),
     LoadMap(LoadMapPacket),
+
+    VehicleSpawn(VehicleSpawnPacket),
 }
 
 impl PacketTrait for Packet {
@@ -33,6 +37,8 @@ impl PacketTrait for Packet {
 
             ('H', 'J') => Ok(Self::JoinServer(JoinServerPacket::from_raw(packet_data)?)),
             ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
+
+            ('V', 'S') => Ok(Self::VehicleSpawn(VehicleSpawnPacket::from_raw(packet_data)?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
@@ -51,6 +57,8 @@ impl PacketTrait for Packet {
 
             Self::JoinServer(p) => Ok(('H', 'J', p.to_raw()?)),
             Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
+
+            Self::VehicleSpawn(p) => Ok(('V', 'S', p.to_raw()?)),
         }
     }
 }
