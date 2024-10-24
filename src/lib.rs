@@ -22,7 +22,7 @@ pub enum ConnectionError {
 pub enum PacketDecodeError {
     #[error("unknown packet ({0}{1})")]
     UnknownPacket(char, char),
-    #[error("unexpected data size (expected {expected:?}, got {actual:?}")]
+    #[error("unexpected data size (expected {expected:?}, got {actual:?})")]
     InvalidDataSize {
         expected: usize,
         actual: usize
@@ -41,5 +41,5 @@ pub enum PacketEncodeError {
 
 pub trait PacketTrait: Sized {
     fn from_raw(sig_a: char, sig_b: char, packet_data: Vec<u8>) -> Result<Self, PacketDecodeError>;
-    fn to_raw(self) -> Result<(char, char, Vec<u8>), PacketEncodeError>;
+    fn to_raw(&self) -> Result<(char, char, Vec<u8>), PacketEncodeError>;
 }

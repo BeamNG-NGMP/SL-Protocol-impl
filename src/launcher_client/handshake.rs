@@ -20,7 +20,7 @@ impl VersionPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut buf = Vec::with_capacity(4);
         buf.append(&mut self.confirm_id.to_le_bytes().to_vec());
         buf.append(&mut self.protocol_version.to_le_bytes().to_vec());
@@ -41,7 +41,7 @@ impl ClientInfoPacket {
         serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
@@ -60,7 +60,7 @@ impl AuthenticationInfoPacket {
         serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }

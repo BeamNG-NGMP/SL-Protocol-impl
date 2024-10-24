@@ -16,6 +16,7 @@ pub enum Packet {
     AuthenticationInfo(AuthenticationInfoPacket),
 
     JoinServer(JoinServerPacket),
+    LoadMap(LoadMapPacket),
 }
 
 impl PacketTrait for Packet {
@@ -31,12 +32,13 @@ impl PacketTrait for Packet {
             ('A', 'I') => Ok(Self::AuthenticationInfo(AuthenticationInfoPacket::from_raw(packet_data)?)),
 
             ('H', 'J') => Ok(Self::JoinServer(JoinServerPacket::from_raw(packet_data)?)),
+            ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
     }
 
-    fn to_raw(self) -> Result<(char, char, Vec<u8>), PacketEncodeError> {
+    fn to_raw(&self) -> Result<(char, char, Vec<u8>), PacketEncodeError> {
         match self {
             Self::ReloadLauncherConnection => Ok(('R', 'L', Vec::new())),
 
@@ -48,6 +50,7 @@ impl PacketTrait for Packet {
             Self::AuthenticationInfo(p) => Ok(('A', 'I', p.to_raw()?)),
 
             Self::JoinServer(p) => Ok(('H', 'J', p.to_raw()?)),
+            Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
         }
     }
 }

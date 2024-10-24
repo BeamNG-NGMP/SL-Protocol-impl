@@ -15,7 +15,7 @@ impl ConfirmationPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         Ok(self.confirm_id.to_le_bytes().to_vec())
     }
 }

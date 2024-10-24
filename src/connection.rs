@@ -17,25 +17,49 @@ use tokio::net::{
 /// Purely handles sending/receiving packets.
 pub struct TcpConnection<T: PacketTrait> {
     packet_type: std::marker::PhantomData<T>,
-
     tcp: TcpStream,
+    buf: Vec<u8>,
 }
 
 impl<T: PacketTrait> TcpConnection<T> {
     pub fn from_stream(tcp: TcpStream) -> Self {
         Self {
             packet_type: std::marker::PhantomData,
-
             tcp,
+            buf: Vec::new(),
         }
     }
 
-    /// Assumes the socket is already readable.
-    async fn read_bytes(&mut self, bytes: usize) -> anyhow::Result<Vec<u8>> {
-        let mut data: Vec<u8> = (0..bytes).into_iter().map(|_| 0u8).collect();
+    fn read_to_buf(&mut self) -> anyhow::Result<usize> {
+        // TODO: Figure out an appropriate length, maybe 4096 is too short
+        let mut big_buf = [0u8; 4096];
 
-        self.tcp.read_exact(&mut data).await?;
-        Ok(data)
+        let read = match self.tcp.try_read(&mut big_buf) {
+            Ok(n) => n,
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::WouldBlock {
+                    return Ok(0);
+                }
+                return Err(e.into())
+            },
+        };
+
+        self.buf.extend_from_slice(&big_buf[..read]);
+
+        Ok(read)
+    }
+
+    /// Assumes the socket is already readable.
+    /// NOTE: This function WILL and SHOULD block until all bytes can be read from the buffer
+    async fn read_bytes(&mut self, bytes: usize) -> anyhow::Result<Vec<u8>> {
+        if bytes > self.buf.len() {
+            let left_to_read = bytes - self.buf.len();
+            let mut buf = vec![0u8; left_to_read];
+            self.tcp.read_exact(&mut buf).await?;
+            self.buf.append(&mut buf);
+        }
+
+        Ok(self.buf.drain(..bytes).collect::<Vec<u8>>())
     }
 
     async fn write_bytes(&mut self, bytes: &[u8]) -> anyhow::Result<()> {
@@ -64,26 +88,24 @@ impl<T: PacketTrait> TcpConnection<T> {
     }
 
     pub async fn try_read_packet(&mut self) -> anyhow::Result<Option<T>> {
-        let mut header_buf = [0u8; 6];
-        let read = self.tcp.peek(&mut header_buf).await?;
-        if read != 6 { return Ok(None); }
+        self.read_to_buf()?;
 
+        // Read potential packet from self.buf now
+        if self.buf.len() < 6 { return Ok(None); }
+        let header_buf = &self.buf[..6];
         let sig_a = header_buf[0] as char;
         let sig_b = header_buf[1] as char;
         let packet_length = u32::from_le_bytes([header_buf[2], header_buf[3], header_buf[4], header_buf[5]]);
 
-        let mut data_buf = vec![0u8; packet_length as usize];
-        let read = self.tcp.peek(&mut data_buf).await?;
-        if read != packet_length as usize { return Ok(None); }
-
-        // We are done, now we must consume the data from the actual queue
-        self.tcp.read(&mut header_buf).await?;
-        self.tcp.read(&mut data_buf).await?;
+        // Once we know we have enough data to also read the packet data, we can start draining
+        if self.buf.len() < packet_length as usize { return Ok(None); }
+        self.buf.drain(..6);
+        let data_buf = self.buf.drain(..(packet_length as usize)).collect::<Vec<u8>>();
 
         Ok(Some(T::from_raw(sig_a, sig_b, data_buf)?))
     }
 
-    pub async fn write_packet(&mut self, packet: T) -> anyhow::Result<()> {
+    pub async fn write_packet(&mut self, packet: &T) -> anyhow::Result<()> {
         let (sig_a, sig_b, mut raw) = packet.to_raw()?;
         let mut bytes = Vec::new(); // TODO: with_capacity for less allocations and more performance
         bytes.push(sig_a as u8);

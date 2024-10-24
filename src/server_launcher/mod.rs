@@ -3,10 +3,12 @@ use crate::*;
 pub mod generic;
 pub mod handshake;
 pub mod serverinfo;
+pub mod gameplay;
 
 use generic::*;
 use handshake::*;
 use serverinfo::*;
+use gameplay::*;
 
 #[derive(Debug)]
 pub enum Packet {
@@ -17,6 +19,8 @@ pub enum Packet {
 
     ServerInfo(ServerInfoPacket),
     LoadMap(LoadMapPacket),
+
+    PlayerData(PlayerDataPacket),
 }
 
 impl PacketTrait for Packet {
@@ -30,11 +34,13 @@ impl PacketTrait for Packet {
             ('H', 'I') => Ok(Self::ServerInfo(ServerInfoPacket::from_raw(packet_data)?)),
             ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
 
+            ('P', 'L') => Ok(Self::PlayerData(PlayerDataPacket::from_raw(packet_data)?)),
+
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
     }
 
-    fn to_raw(self) -> Result<(char, char, Vec<u8>), PacketEncodeError> {
+    fn to_raw(&self) -> Result<(char, char, Vec<u8>), PacketEncodeError> {
         match self {
             Self::Confirmation(p) => Ok(('C', 'C', p.to_raw()?)),
 
@@ -43,6 +49,8 @@ impl PacketTrait for Packet {
 
             Self::ServerInfo(p) => Ok(('H', 'I', p.to_raw()?)),
             Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
+
+            Self::PlayerData(p) => Ok(('P', 'L', p.to_raw()?)),
         }
     }
 }

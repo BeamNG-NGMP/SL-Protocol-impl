@@ -18,7 +18,7 @@ impl ServerInfoPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut bytes = self.http_port.to_le_bytes().to_vec();
         bytes.extend_from_slice(&self.udp_port.to_le_bytes());
         Ok(bytes)
@@ -46,7 +46,7 @@ impl LoadMapPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut buf = self.confirm_id.to_le_bytes().to_vec();
         for c in self.map_name.chars().into_iter() {
             buf.push(c as u8);

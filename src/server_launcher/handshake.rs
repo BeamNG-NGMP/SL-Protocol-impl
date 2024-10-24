@@ -18,7 +18,7 @@ impl VersionPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut buf = Vec::with_capacity(4);
         buf.append(&mut self.confirm_id.to_le_bytes().to_vec());
         buf.append(&mut self.client_version.to_le_bytes().to_vec());
@@ -48,7 +48,7 @@ impl AuthenticationPacket {
         })
     }
 
-    pub fn to_raw(self) -> Result<Vec<u8>, PacketEncodeError> {
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut buf = Vec::with_capacity(2 + self.auth_code.len());
         buf.append(&mut self.confirm_id.to_le_bytes().to_vec());
         for c in self.auth_code.chars().into_iter() {
