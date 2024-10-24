@@ -1,3 +1,5 @@
+use crate::*;
+
 pub mod generic;
 pub mod handshake;
 pub mod serverinfo;
@@ -6,14 +8,7 @@ use generic::*;
 use handshake::*;
 use serverinfo::*;
 
-use crate::*;
-
-pub struct PacketHeader {
-    pub sig_a: char,
-    pub sig_b: char,
-    pub packet_length: u32,
-}
-
+#[derive(Debug)]
 pub enum Packet {
     Confirmation(ConfirmationPacket),
 
@@ -21,7 +16,6 @@ pub enum Packet {
     Authentication(AuthenticationPacket),
 
     ServerInfo(ServerInfoPacket),
-    ModList(ModListPacket),
     LoadMap(LoadMapPacket),
 }
 
@@ -34,7 +28,6 @@ impl PacketTrait for Packet {
             ('A', 'C') => Ok(Self::Authentication(AuthenticationPacket::from_raw(packet_data)?)),
 
             ('H', 'I') => Ok(Self::ServerInfo(ServerInfoPacket::from_raw(packet_data)?)),
-            ('M', 'L') => Ok(Self::ModList(ModListPacket::from_raw(packet_data)?)),
             ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
@@ -49,7 +42,6 @@ impl PacketTrait for Packet {
             Self::Authentication(p) => Ok(('A', 'C', p.to_raw()?)),
 
             Self::ServerInfo(p) => Ok(('H', 'I', p.to_raw()?)),
-            Self::ModList(p) => Ok(('M', 'L', p.to_raw()?)),
             Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
         }
     }

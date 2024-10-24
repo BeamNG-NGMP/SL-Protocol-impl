@@ -1,9 +1,22 @@
 #[macro_use] extern crate log;
 
-pub mod server_launcher;
 pub mod connection;
+pub mod server_launcher;
+pub mod launcher_client;
 
 use thiserror::Error;
+
+pub struct PacketHeader {
+    pub sig_a: char,
+    pub sig_b: char,
+    pub packet_length: u32,
+}
+
+#[derive(Error, Debug)]
+pub enum ConnectionError {
+    #[error("invalid packet size")]
+    InvalidPacketSize,
+}
 
 #[derive(Error, Debug)]
 pub enum PacketDecodeError {
@@ -14,12 +27,16 @@ pub enum PacketDecodeError {
         expected: usize,
         actual: usize
     },
+    #[error("invalid string")]
+    InvalidString,
+    #[error("invalid json")]
+    InvalidJson,
 }
 
 #[derive(Error, Debug)]
 pub enum PacketEncodeError {
-    #[error("generic")]
-    Generic,
+    #[error("cannot serialize to json")]
+    CannotSerializeJson,
 }
 
 pub trait PacketTrait: Sized {

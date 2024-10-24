@@ -1,5 +1,6 @@
 use super::{PacketDecodeError, PacketEncodeError};
 
+#[derive(Debug)]
 pub struct ConfirmationPacket {
     pub confirm_id: u16,
 }

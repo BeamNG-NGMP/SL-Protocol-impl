@@ -1,5 +1,6 @@
 use super::{PacketDecodeError, PacketEncodeError};
 
+#[derive(Debug)]
 pub struct VersionPacket {
     pub confirm_id: u16,
     pub client_version: u16
@@ -25,6 +26,7 @@ impl VersionPacket {
     }
 }
 
+#[derive(Debug)]
 pub struct AuthenticationPacket {
     pub confirm_id: u16,
     pub auth_code: String,
@@ -37,7 +39,7 @@ impl AuthenticationPacket {
         let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
         // TODO: String::with_capacity for 1 single big allocation for extra performance?
         let mut auth_code = String::new();
-        for i in 3..packet_data.len() {
+        for i in 2..packet_data.len() {
             auth_code.push(packet_data[i] as char);
         }
         Ok(Self {
