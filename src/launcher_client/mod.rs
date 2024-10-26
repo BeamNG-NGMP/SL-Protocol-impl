@@ -16,11 +16,14 @@ pub enum Packet {
     Version(VersionPacket),
     ClientInfo(ClientInfoPacket),
     AuthenticationInfo(AuthenticationInfoPacket),
+    LoginRequest,
 
     JoinServer(JoinServerPacket),
     LoadMap(LoadMapPacket),
 
     VehicleSpawn(VehicleSpawnPacket),
+    VehicleConfirm(VehicleConfirmPacket),
+    VehicleDelete(VehicleDeletePacket),
 }
 
 impl PacketTrait for Packet {
@@ -34,11 +37,14 @@ impl PacketTrait for Packet {
 
             ('C', 'I') => Ok(Self::ClientInfo(ClientInfoPacket::from_raw(packet_data)?)),
             ('A', 'I') => Ok(Self::AuthenticationInfo(AuthenticationInfoPacket::from_raw(packet_data)?)),
+            ('L', 'R') => Ok(Self::LoginRequest),
 
             ('H', 'J') => Ok(Self::JoinServer(JoinServerPacket::from_raw(packet_data)?)),
             ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
 
             ('V', 'S') => Ok(Self::VehicleSpawn(VehicleSpawnPacket::from_raw(packet_data)?)),
+            ('V', 'A') => Ok(Self::VehicleConfirm(VehicleConfirmPacket::from_raw(packet_data)?)),
+            ('V', 'D') => Ok(Self::VehicleDelete(VehicleDeletePacket::from_raw(packet_data)?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
@@ -54,11 +60,14 @@ impl PacketTrait for Packet {
 
             Self::ClientInfo(p) => Ok(('C', 'I', p.to_raw()?)),
             Self::AuthenticationInfo(p) => Ok(('A', 'I', p.to_raw()?)),
+            Self::LoginRequest => Ok(('L', 'R', Vec::new())),
 
             Self::JoinServer(p) => Ok(('H', 'J', p.to_raw()?)),
             Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
 
             Self::VehicleSpawn(p) => Ok(('V', 'S', p.to_raw()?)),
+            Self::VehicleConfirm(p) => Ok(('V', 'A', p.to_raw()?)),
+            Self::VehicleDelete(p) => Ok(('V', 'D', p.to_raw()?)),
         }
     }
 }

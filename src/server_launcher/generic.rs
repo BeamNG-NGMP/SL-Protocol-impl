@@ -19,3 +19,21 @@ impl ConfirmationPacket {
         Ok(self.confirm_id.to_le_bytes().to_vec())
     }
 }
+
+#[derive(Debug)]
+pub struct PlayerKickPacket {
+    pub reason: String,
+}
+
+impl PlayerKickPacket {
+    pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
+        let reason = String::from_utf8(packet_data).map_err(|e| PacketDecodeError::InvalidString)?;
+        Ok(Self {
+            reason,
+        })
+    }
+
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
+        Ok(self.reason.as_bytes().to_vec())
+    }
+}

@@ -52,6 +52,8 @@ pub struct AuthenticationInfoPacket {
     pub confirm_id: u16,
     pub success: bool,
     pub player_name: String,
+    pub steam_id: String,
+    pub avatar_hash: String,
 }
 
 impl AuthenticationInfoPacket {
