@@ -1,76 +1,71 @@
 use super::{PacketDecodeError, PacketEncodeError};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct ConfirmationPacket {
     pub confirm_id: u16,
 }
 
 impl ConfirmationPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let data_len = packet_data.len();
-        if data_len != 2 { return Err(PacketDecodeError::InvalidDataSize { expected: 2, actual: data_len }); }
-        let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
-        Ok(Self {
-            confirm_id,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        Ok(self.confirm_id.to_le_bytes().to_vec())
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct JoinServerPacket {
-    pub confirm_id: u16,
-    pub ip_addr: String,
+    pub ip_address: String,
 }
 
 impl JoinServerPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let data_len = packet_data.len();
-        if data_len < 2 { return Err(PacketDecodeError::InvalidDataSize { expected: 2, actual: data_len }); }
-        let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
-        let ip_addr = String::from_utf8(packet_data[2..].to_vec()).map_err(|_| PacketDecodeError::InvalidString)?;
-        Ok(Self {
-            confirm_id,
-            ip_addr,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let mut bytes = self.confirm_id.to_le_bytes().to_vec();
-        bytes.extend_from_slice(self.ip_addr.as_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ConnectionErrorPacket {
+    pub error: String,
+}
+
+impl ConnectionErrorPacket {
+    pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+    }
+
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
+    }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct LoadMapPacket {
     pub confirm_id: u16,
-    pub map_name: String,
+    pub map_string: String,
 }
 
 impl LoadMapPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let data_len = packet_data.len();
-        if data_len < 2 { return Err(PacketDecodeError::InvalidDataSize { expected: 2, actual: data_len }); }
-
-        let confirm_id = u16::from_le_bytes([packet_data[0], packet_data[1]]);
-
-        // TODO: String::with_capacity for 1 single big allocation for extra performance?
-        let map_name = String::from_utf8(packet_data[2..].to_vec()).map_err(|_| PacketDecodeError::InvalidString)?;
-        Ok(Self {
-            confirm_id,
-            map_name,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let mut buf = self.confirm_id.to_le_bytes().to_vec();
-        for c in self.map_name.chars().into_iter() {
-            buf.push(c as u8);
-        }
-        Ok(buf)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }

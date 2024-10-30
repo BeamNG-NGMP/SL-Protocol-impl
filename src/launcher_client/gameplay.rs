@@ -1,166 +1,109 @@
 use super::{PacketDecodeError, PacketEncodeError};
+use serde::{Serialize, Deserialize};
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct VehicleData {
+    #[serde(rename = "Jbeam")]
+    pub jbeam: String,
+    pub object_id: u32,
+    pub paints: String,
+    #[serde(rename = "partConfig")]
+    pub part_config: String,
+    pub pos: [f32; 3],
+    pub rot: [f32; 4],
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleSpawnPacket {
     pub confirm_id: u16,
-
-    pub raw_json: String,
+    pub steam_id: String,
+    pub vehicle_id: u16,
+    pub vehicle_data: VehicleData,
 }
 
 impl VehicleSpawnPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd = packet_data.into_iter();
-        let confirm_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let raw_json = String::from_utf8(pd.collect::<Vec<u8>>()).map_err(|_| PacketDecodeError::InvalidString)?;
-        Ok(Self {
-            confirm_id,
-            raw_json,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let mut bytes = self.confirm_id.to_le_bytes().to_vec();
-        bytes.extend_from_slice(self.raw_json.as_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleConfirmPacket {
     pub confirm_id: u16,
     pub vehicle_id: u16,
-    pub obj_id: u32,
+    pub object_id: u32,
 }
 
 impl VehicleConfirmPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd = packet_data.into_iter();
-        let confirm_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let obj_id = u32::from_le_bytes([
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-            ]);
-        Ok(Self {
-            confirm_id,
-            vehicle_id,
-            obj_id,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let mut bytes = self.confirm_id.to_le_bytes().to_vec();
-        bytes.extend_from_slice(&self.vehicle_id.to_le_bytes());
-        bytes.extend_from_slice(&self.obj_id.to_le_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleDeletePacket {
-    pub player_id: u64,
+    pub player_id: String,
     pub vehicle_id: u16,
 }
 
 impl VehicleDeletePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd = packet_data.into_iter();
-        let player_id_len = pd.next().ok_or(PacketDecodeError::UnexpectedEof)?;
-        let mut player_id_str = String::new();
-        for _ in 0..player_id_len {
-            player_id_str.push(pd.next().ok_or(PacketDecodeError::UnexpectedEof)? as char);
-        }
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-
-        let player_id: u64 = player_id_str.parse().map_err(|_| PacketDecodeError::InvalidNumber)?;
-
-        Ok(Self {
-            player_id,
-            vehicle_id,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let player_id_str = self.player_id.to_string();
-        let mut bytes = vec![player_id_str.len() as u8];
-        bytes.extend_from_slice(&player_id_str.as_bytes());
-        bytes.extend_from_slice(&self.vehicle_id.to_le_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleTransformPacket {
-    pub player_id: u64,
+    pub player_id: String,
     pub vehicle_id: u16,
     pub transform: String,
 }
 
 impl VehicleTransformPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd = packet_data.into_iter();
-        let player_id_len = pd.next().ok_or(PacketDecodeError::UnexpectedEof)?;
-        let mut player_id_str = String::new();
-        for _ in 0..player_id_len {
-            player_id_str.push(pd.next().ok_or(PacketDecodeError::UnexpectedEof)? as char);
-        }
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let transform = String::from_utf8(pd.collect::<Vec<u8>>()).map_err(|_| PacketDecodeError::InvalidString)?;
-
-        let player_id: u64 = player_id_str.parse().map_err(|_| PacketDecodeError::InvalidNumber)?;
-
-        Ok(Self {
-            player_id,
-            vehicle_id,
-            transform,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let player_id_str = self.player_id.to_string();
-        let mut bytes = vec![player_id_str.len() as u8];
-        bytes.extend_from_slice(&player_id_str.as_bytes());
-        bytes.extend_from_slice(&self.vehicle_id.to_le_bytes());
-        bytes.extend_from_slice(&self.transform.as_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleUpdatePacket {
-    pub player_id: u64,
+    pub player_id: String,
     pub vehicle_id: u16,
     pub runtime_data: String,
 }
 
 impl VehicleUpdatePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
-        let mut pd = packet_data.into_iter();
-        let player_id_len = pd.next().ok_or(PacketDecodeError::UnexpectedEof)?;
-        let mut player_id_str = String::new();
-        for _ in 0..player_id_len {
-            player_id_str.push(pd.next().ok_or(PacketDecodeError::UnexpectedEof)? as char);
-        }
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let runtime_data = String::from_utf8(pd.collect::<Vec<u8>>()).map_err(|_| PacketDecodeError::InvalidString)?;
-
-        let player_id: u64 = player_id_str.parse().map_err(|_| PacketDecodeError::InvalidNumber)?;
-
-        Ok(Self {
-            player_id,
-            vehicle_id,
-            runtime_data,
-        })
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let player_id_str = self.player_id.to_string();
-        let mut bytes = vec![player_id_str.len() as u8];
-        bytes.extend_from_slice(&player_id_str.as_bytes());
-        bytes.extend_from_slice(&self.vehicle_id.to_le_bytes());
-        bytes.extend_from_slice(&self.runtime_data.as_bytes());
-        Ok(bytes)
+        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
     }
 }
