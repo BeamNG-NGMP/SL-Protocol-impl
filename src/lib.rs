@@ -27,10 +27,14 @@ pub enum PacketDecodeError {
         expected: usize,
         actual: usize
     },
+    #[error("unexpected eof")]
+    UnexpectedEof,
     #[error("invalid string")]
     InvalidString,
     #[error("invalid json")]
     InvalidJson,
+    #[error("invalid number")]
+    InvalidNumber,
 }
 
 #[derive(Error, Debug)]

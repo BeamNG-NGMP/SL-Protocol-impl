@@ -24,6 +24,9 @@ pub enum Packet {
     VehicleSpawn(VehicleSpawnPacket),
     VehicleConfirm(VehicleConfirmPacket),
     VehicleDelete(VehicleDeletePacket),
+
+    VehicleTransform(VehicleTransformPacket),
+    VehicleUpdate(VehicleUpdatePacket),
 }
 
 impl PacketTrait for Packet {
@@ -45,6 +48,9 @@ impl PacketTrait for Packet {
             ('V', 'S') => Ok(Self::VehicleSpawn(VehicleSpawnPacket::from_raw(packet_data)?)),
             ('V', 'A') => Ok(Self::VehicleConfirm(VehicleConfirmPacket::from_raw(packet_data)?)),
             ('V', 'D') => Ok(Self::VehicleDelete(VehicleDeletePacket::from_raw(packet_data)?)),
+
+            ('V', 'T') => Ok(Self::VehicleTransform(VehicleTransformPacket::from_raw(packet_data)?)),
+            ('V', 'U') => Ok(Self::VehicleUpdate(VehicleUpdatePacket::from_raw(packet_data)?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
@@ -68,6 +74,9 @@ impl PacketTrait for Packet {
             Self::VehicleSpawn(p) => Ok(('V', 'S', p.to_raw()?)),
             Self::VehicleConfirm(p) => Ok(('V', 'A', p.to_raw()?)),
             Self::VehicleDelete(p) => Ok(('V', 'D', p.to_raw()?)),
+
+            Self::VehicleTransform(p) => Ok(('V', 'T', p.to_raw()?)),
+            Self::VehicleUpdate(p) => Ok(('V', 'U', p.to_raw()?)),
         }
     }
 }
