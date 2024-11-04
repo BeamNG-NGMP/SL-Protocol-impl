@@ -1,5 +1,31 @@
 use super::{PacketDecodeError, PacketEncodeError};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PlayerData {
+    pub name: String,
+    pub steam_id: String,
+    pub avatar_hash: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PlayerDataPacket {
+    pub players: Vec<PlayerData>,
+}
+
+impl PlayerDataPacket {
+    pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
+        let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleSpawnPacket", e))
+    }
+
+    pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        Ok(json.as_bytes().to_vec())
+    }
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleData {
@@ -24,11 +50,13 @@ pub struct VehicleSpawnPacket {
 impl VehicleSpawnPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleSpawnPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
@@ -43,36 +71,40 @@ pub struct VehicleConfirmPacket {
 impl VehicleConfirmPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleConfirmPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleDeletePacket {
-    pub player_id: String,
+    pub steam_id: String,
     pub vehicle_id: u16,
 }
 
 impl VehicleDeletePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleDeletePacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleTransformPacket {
-    pub player_id: String,
+    pub steam_id: String,
     pub vehicle_id: u16,
     pub transform: String,
 }
@@ -80,18 +112,20 @@ pub struct VehicleTransformPacket {
 impl VehicleTransformPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleTransformPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct VehicleUpdatePacket {
-    pub player_id: String,
+    pub steam_id: String,
     pub vehicle_id: u16,
     pub runtime_data: String,
 }
@@ -99,11 +133,13 @@ pub struct VehicleUpdatePacket {
 impl VehicleUpdatePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleUpdatePacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }

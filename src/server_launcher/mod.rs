@@ -1,14 +1,14 @@
 use crate::*;
 
+pub mod gameplay;
 pub mod generic;
 pub mod handshake;
 pub mod serverinfo;
-pub mod gameplay;
 
+use gameplay::*;
 use generic::*;
 use handshake::*;
 use serverinfo::*;
-use gameplay::*;
 
 #[derive(Debug)]
 pub enum Packet {
@@ -34,23 +34,37 @@ pub enum Packet {
 impl PacketTrait for Packet {
     fn from_raw(sig_a: char, sig_b: char, packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         match (sig_a, sig_b) {
-            ('C', 'C') => Ok(Self::Confirmation(ConfirmationPacket::from_raw(packet_data)?)),
+            ('C', 'C') => Ok(Self::Confirmation(ConfirmationPacket::from_raw(
+                packet_data,
+            )?)),
             ('P', 'K') => Ok(Self::PlayerKick(PlayerKickPacket::from_raw(packet_data)?)),
 
             ('V', 'C') => Ok(Self::Version(VersionPacket::from_raw(packet_data)?)),
-            ('A', 'C') => Ok(Self::Authentication(AuthenticationPacket::from_raw(packet_data)?)),
+            ('A', 'C') => Ok(Self::Authentication(AuthenticationPacket::from_raw(
+                packet_data,
+            )?)),
 
             ('H', 'I') => Ok(Self::ServerInfo(ServerInfoPacket::from_raw(packet_data)?)),
             ('L', 'M') => Ok(Self::LoadMap(LoadMapPacket::from_raw(packet_data)?)),
 
-            ('P', 'L') => Ok(Self::PlayerData(PlayerDataPacket::from_raw(packet_data)?)),
+            ('P', 'D') => Ok(Self::PlayerData(PlayerDataPacket::from_raw(packet_data)?)),
 
-            ('V', 'S') => Ok(Self::VehicleSpawn(VehicleSpawnPacket::from_raw(packet_data)?)),
-            ('V', 'A') => Ok(Self::VehicleConfirm(VehicleConfirmPacket::from_raw(packet_data)?)),
-            ('V', 'D') => Ok(Self::VehicleDelete(VehicleDeletePacket::from_raw(packet_data)?)),
+            ('V', 'S') => Ok(Self::VehicleSpawn(VehicleSpawnPacket::from_raw(
+                packet_data,
+            )?)),
+            ('V', 'A') => Ok(Self::VehicleConfirm(VehicleConfirmPacket::from_raw(
+                packet_data,
+            )?)),
+            ('V', 'D') => Ok(Self::VehicleDelete(VehicleDeletePacket::from_raw(
+                packet_data,
+            )?)),
 
-            ('V', 'T') => Ok(Self::VehicleTransform(VehicleTransformPacket::from_raw(packet_data)?)),
-            ('V', 'U') => Ok(Self::VehicleUpdate(VehicleUpdatePacket::from_raw(packet_data)?)),
+            ('V', 'T') => Ok(Self::VehicleTransform(VehicleTransformPacket::from_raw(
+                packet_data,
+            )?)),
+            ('V', 'U') => Ok(Self::VehicleUpdate(VehicleUpdatePacket::from_raw(
+                packet_data,
+            )?)),
 
             _ => Err(PacketDecodeError::UnknownPacket(sig_a, sig_b)),
         }
@@ -67,7 +81,7 @@ impl PacketTrait for Packet {
             Self::ServerInfo(p) => Ok(('H', 'I', p.to_raw()?)),
             Self::LoadMap(p) => Ok(('L', 'M', p.to_raw()?)),
 
-            Self::PlayerData(p) => Ok(('P', 'L', p.to_raw()?)),
+            Self::PlayerData(p) => Ok(('P', 'D', p.to_raw()?)),
 
             Self::VehicleSpawn(p) => Ok(('V', 'S', p.to_raw()?)),
             Self::VehicleConfirm(p) => Ok(('V', 'A', p.to_raw()?)),

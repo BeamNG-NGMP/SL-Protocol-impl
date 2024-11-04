@@ -7,11 +7,7 @@ use std::net::SocketAddr;
 use std::sync::Arc;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use tokio::net::{
-    TcpStream,
-    UdpSocket,
-    ToSocketAddrs,
-};
+use tokio::net::{TcpStream, ToSocketAddrs, UdpSocket};
 
 /// A generic connection to be used anywhere it's needed.
 /// Purely handles sending/receiving packets.
@@ -40,8 +36,8 @@ impl<T: PacketTrait> TcpConnection<T> {
                 if e.kind() == std::io::ErrorKind::WouldBlock {
                     return Ok(0);
                 }
-                return Err(e.into())
-            },
+                return Err(e.into());
+            }
         };
 
         self.buf.extend_from_slice(&big_buf[..read]);
@@ -72,7 +68,8 @@ impl<T: PacketTrait> TcpConnection<T> {
         let header_raw = self.read_bytes(6).await?;
         let sig_a = header_raw[0] as char;
         let sig_b = header_raw[1] as char;
-        let packet_length = u32::from_le_bytes([header_raw[2], header_raw[3], header_raw[4], header_raw[5]]);
+        let packet_length =
+            u32::from_le_bytes([header_raw[2], header_raw[3], header_raw[4], header_raw[5]]);
         Ok(PacketHeader {
             sig_a,
             sig_b,
@@ -83,24 +80,38 @@ impl<T: PacketTrait> TcpConnection<T> {
     /// TODO: Check if socket is readable?
     pub async fn wait_for_packet(&mut self) -> anyhow::Result<T> {
         let packet_header = self.read_packet_header().await?;
-        let packet_data = self.read_bytes(packet_header.packet_length as usize).await?;
-        Ok(T::from_raw(packet_header.sig_a, packet_header.sig_b, packet_data)?)
+        let packet_data = self
+            .read_bytes(packet_header.packet_length as usize)
+            .await?;
+        Ok(T::from_raw(
+            packet_header.sig_a,
+            packet_header.sig_b,
+            packet_data,
+        )?)
     }
 
     pub async fn try_read_packet(&mut self) -> anyhow::Result<Option<T>> {
         self.read_to_buf()?;
 
         // Read potential packet from self.buf now
-        if self.buf.len() < 6 { return Ok(None); }
+        if self.buf.len() < 6 {
+            return Ok(None);
+        }
         let header_buf = &self.buf[..6];
         let sig_a = header_buf[0] as char;
         let sig_b = header_buf[1] as char;
-        let packet_length = u32::from_le_bytes([header_buf[2], header_buf[3], header_buf[4], header_buf[5]]);
+        let packet_length =
+            u32::from_le_bytes([header_buf[2], header_buf[3], header_buf[4], header_buf[5]]);
 
         // Once we know we have enough data to also read the packet data, we can start draining
-        if self.buf.len() < packet_length as usize { return Ok(None); }
+        if self.buf.len() < packet_length as usize {
+            return Ok(None);
+        }
         self.buf.drain(..6);
-        let data_buf = self.buf.drain(..(packet_length as usize)).collect::<Vec<u8>>();
+        let data_buf = self
+            .buf
+            .drain(..(packet_length as usize))
+            .collect::<Vec<u8>>();
 
         Ok(Some(T::from_raw(sig_a, sig_b, data_buf)?))
     }
@@ -140,13 +151,7 @@ impl<T: PacketTrait> UdpListener<T> {
 
         let sig_a = buf[0] as char;
         let sig_b = buf[1] as char;
-        let packet_length = u32::from_le_bytes([
-                buf[2],
-                buf[3],
-                buf[4],
-                buf[5],
-            ]);
-        trace!("packet_length: {}", packet_length);
+        let packet_length = u32::from_le_bytes([buf[2], buf[3], buf[4], buf[5]]);
 
         if buf.len() < 6 + packet_length as usize {
             return Err(ConnectionError::InvalidPacketSize.into());
@@ -157,7 +162,6 @@ impl<T: PacketTrait> UdpListener<T> {
 
     pub async fn wait_for_packet(&mut self) -> anyhow::Result<(T, SocketAddr)> {
         let (bytes_read, addr) = self.udp_socket.recv_from(&mut self.recv_buf).await?;
-        trace!("bytes read: {} (from {})", bytes_read, addr);
         let buf = &self.recv_buf[..bytes_read];
         self.packet_from_buf(addr, buf)
     }
@@ -165,23 +169,28 @@ impl<T: PacketTrait> UdpListener<T> {
     pub fn try_read_packet(&mut self) -> anyhow::Result<Option<(T, SocketAddr)>> {
         match self.udp_socket.try_recv_from(&mut self.recv_buf) {
             Ok((bytes_read, addr)) => {
-                trace!("bytes read: {} (from {})", bytes_read, addr);
                 let buf = &self.recv_buf[..bytes_read];
                 Ok(Some(self.packet_from_buf(addr, buf)?))
-            },
-            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => {
-                Ok(None)
-            },
-            Err(e) => Err(e.into())
+            }
+            Err(ref e) if e.kind() == std::io::ErrorKind::WouldBlock => Ok(None),
+            Err(e) => Err(e.into()),
         }
     }
 
-    pub async fn write_bytes<A: ToSocketAddrs>(&mut self, target: &A, bytes: &[u8]) -> anyhow::Result<()> {
+    pub async fn write_bytes<A: ToSocketAddrs>(
+        &mut self,
+        target: &A,
+        bytes: &[u8],
+    ) -> anyhow::Result<()> {
         self.udp_socket.send_to(bytes, target).await?;
         Ok(())
     }
 
-    pub async fn write_packet<A: ToSocketAddrs>(&mut self, target: A, packet: T) -> anyhow::Result<()> {
+    pub async fn write_packet<A: ToSocketAddrs>(
+        &mut self,
+        target: A,
+        packet: T,
+    ) -> anyhow::Result<()> {
         let (sig_a, sig_b, mut raw) = packet.to_raw()?;
         let mut bytes = Vec::new(); // TODO: with_capacity for less allocations and more performance
         bytes.push(sig_a as u8);
@@ -203,8 +212,12 @@ pub struct UdpClient<T: PacketTrait> {
 }
 
 impl<T: PacketTrait> UdpClient<T> {
-    pub async fn connect<A: ToSocketAddrs>(mut udp_socket: UdpSocket, target: A) -> anyhow::Result<Self> {
+    pub async fn connect<A: ToSocketAddrs>(
+        udp_socket: UdpSocket,
+        target: A,
+    ) -> anyhow::Result<Self> {
         udp_socket.connect(target).await?;
+        trace!("peer_addr: {:?}", udp_socket.peer_addr());
         Ok(Self {
             packet_type: std::marker::PhantomData,
             udp_socket,
@@ -214,7 +227,6 @@ impl<T: PacketTrait> UdpClient<T> {
 
     pub async fn wait_for_packet(&mut self) -> anyhow::Result<T> {
         let bytes_read = self.udp_socket.recv(&mut self.recv_buf).await?;
-        trace!("bytes read: {}", bytes_read);
         let buf = &self.recv_buf[..bytes_read];
 
         if buf.len() < 6 {
@@ -223,13 +235,7 @@ impl<T: PacketTrait> UdpClient<T> {
 
         let sig_a = buf[0] as char;
         let sig_b = buf[1] as char;
-        let packet_length = u32::from_le_bytes([
-                buf[2],
-                buf[3],
-                buf[4],
-                buf[5],
-            ]);
-        trace!("packet_length: {}", packet_length);
+        let packet_length = u32::from_le_bytes([buf[2], buf[3], buf[4], buf[5]]);
 
         if buf.len() < 6 + packet_length as usize {
             return Err(ConnectionError::InvalidPacketSize.into());

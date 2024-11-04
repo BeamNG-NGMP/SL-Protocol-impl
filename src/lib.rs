@@ -1,8 +1,9 @@
-#[macro_use] extern crate log;
+#[macro_use]
+extern crate log;
 
 pub mod connection;
-pub mod server_launcher;
 pub mod launcher_client;
+pub mod server_launcher;
 
 use thiserror::Error;
 
@@ -23,16 +24,13 @@ pub enum PacketDecodeError {
     #[error("unknown packet ({0}{1})")]
     UnknownPacket(char, char),
     #[error("unexpected data size (expected {expected:?}, got {actual:?})")]
-    InvalidDataSize {
-        expected: usize,
-        actual: usize
-    },
+    InvalidDataSize { expected: usize, actual: usize },
     #[error("unexpected eof")]
     UnexpectedEof,
     #[error("invalid string")]
     InvalidString,
-    #[error("invalid json")]
-    InvalidJson,
+    #[error("invalid json: {1} (in {0})")]
+    InvalidJson(&'static str, serde_json::Error),
     #[error("invalid number")]
     InvalidNumber,
 }

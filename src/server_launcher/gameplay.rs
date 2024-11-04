@@ -1,11 +1,12 @@
 use super::{PacketDecodeError, PacketEncodeError};
 
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct PlayerData {
     pub name: String,
     pub steam_id: u64,
+    pub avatar_hash: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -17,15 +18,19 @@ impl PlayerDataPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let raw = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
 
-        Ok(serde_json::from_str(&raw).map_err(|_| PacketDecodeError::InvalidJson)?)
+        Ok(serde_json::from_str(&raw)
+            .map_err(|e| PacketDecodeError::InvalidJson("PlayerDataPacket", e))?)
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        Ok(serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?.as_bytes().to_vec())
+        Ok(serde_json::to_string(&self)
+            .map_err(|_| PacketEncodeError::CannotSerializeJson)?
+            .as_bytes()
+            .to_vec())
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct VehicleData {
     #[serde(rename = "Jbeam")]
     pub jbeam: String,
@@ -48,11 +53,13 @@ pub struct VehicleSpawnPacket {
 impl VehicleSpawnPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("VehicleSpawnPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
@@ -67,14 +74,20 @@ pub struct VehicleConfirmPacket {
 impl VehicleConfirmPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let mut pd = packet_data.into_iter();
-        let confirm_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
+        let confirm_id = u16::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let vehicle_id = u16::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
         let obj_id = u32::from_le_bytes([
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-            ]);
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
         Ok(Self {
             confirm_id,
             vehicle_id,
@@ -100,17 +113,19 @@ impl VehicleDeletePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let mut pd = packet_data.into_iter();
         let player_id = u64::from_le_bytes([
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-            ]);
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let vehicle_id = u16::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
         Ok(Self {
             player_id,
             vehicle_id,
@@ -135,18 +150,21 @@ impl VehicleTransformPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let mut pd = packet_data.into_iter();
         let player_id = u64::from_le_bytes([
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-            ]);
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let transform = String::from_utf8(pd.collect::<Vec<u8>>()).map_err(|_| PacketDecodeError::InvalidString)?;
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let vehicle_id = u16::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let transform = String::from_utf8(pd.collect::<Vec<u8>>())
+            .map_err(|_| PacketDecodeError::InvalidString)?;
         Ok(Self {
             player_id,
             vehicle_id,
@@ -162,10 +180,11 @@ impl VehicleTransformPacket {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default, Clone)]
 pub struct VehicleUpdatePacket {
     pub player_id: u64,
     pub vehicle_id: u16,
+    pub ms: u32,
     pub runtime_data: String,
 }
 
@@ -173,21 +192,31 @@ impl VehicleUpdatePacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let mut pd = packet_data.into_iter();
         let player_id = u64::from_le_bytes([
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-                pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
-            ]);
-        let vehicle_id = u16::from_le_bytes([pd.next().ok_or(PacketDecodeError::UnexpectedEof)?, pd.next().ok_or(PacketDecodeError::UnexpectedEof)?]);
-        let runtime_data = String::from_utf8(pd.collect::<Vec<u8>>()).map_err(|_| PacketDecodeError::InvalidString)?;
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let vehicle_id = u16::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let ms = u32::from_le_bytes([
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+            pd.next().ok_or(PacketDecodeError::UnexpectedEof)?,
+        ]);
+        let runtime_data = String::from_utf8(pd.collect::<Vec<u8>>())
+            .map_err(|_| PacketDecodeError::InvalidString)?;
         Ok(Self {
             player_id,
             vehicle_id,
+            ms,
             runtime_data,
         })
     }
@@ -195,6 +224,7 @@ impl VehicleUpdatePacket {
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
         let mut bytes = self.player_id.to_le_bytes().to_vec();
         bytes.extend_from_slice(&self.vehicle_id.to_le_bytes());
+        bytes.extend_from_slice(&self.ms.to_le_bytes());
         bytes.extend_from_slice(&self.runtime_data.as_bytes());
         Ok(bytes)
     }

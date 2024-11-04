@@ -1,5 +1,5 @@
 use super::{PacketDecodeError, PacketEncodeError};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConfirmationPacket {
@@ -9,11 +9,13 @@ pub struct ConfirmationPacket {
 impl ConfirmationPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("ConfirmationPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
@@ -26,11 +28,13 @@ pub struct JoinServerPacket {
 impl JoinServerPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("JoinServerPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
@@ -43,11 +47,13 @@ pub struct ConnectionErrorPacket {
 impl ConnectionErrorPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json)
+            .map_err(|e| PacketDecodeError::InvalidJson("ConnectionErrorPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
@@ -61,11 +67,12 @@ pub struct LoadMapPacket {
 impl LoadMapPacket {
     pub fn from_raw(packet_data: Vec<u8>) -> Result<Self, PacketDecodeError> {
         let json = String::from_utf8(packet_data).map_err(|_| PacketDecodeError::InvalidString)?;
-        serde_json::from_str(&json).map_err(|_| PacketDecodeError::InvalidJson)
+        serde_json::from_str(&json).map_err(|e| PacketDecodeError::InvalidJson("LoadMapPacket", e))
     }
 
     pub fn to_raw(&self) -> Result<Vec<u8>, PacketEncodeError> {
-        let json = serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
+        let json =
+            serde_json::to_string(&self).map_err(|_| PacketEncodeError::CannotSerializeJson)?;
         Ok(json.as_bytes().to_vec())
     }
 }
